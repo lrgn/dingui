@@ -4,9 +4,9 @@
 #include <iostream>
 
 Application::Application()
-:sonCopier("")
-,sonRepertoireCourant("/boot/")
-,sesErreurs("")
+:sesErreurs("")
+,sonCopier("")
+,sonRepertoireCourant("")
 {
 	std::ifstream laConfiguration("config.txt");
 	std::string laVariable, laValeur;
@@ -25,6 +25,7 @@ Application::Application()
 	}
 
 	laConfiguration.close();
+	sonRepertoireCourant = getSaValeur("default-directory");
 	std::ifstream lesApplications("apps.txt");
 	std::string lExtension, lApplication;
 
@@ -103,13 +104,18 @@ void Application::changerRepertoire(std::string unRepertoire)
 	return;
 }
 
-void Application::coller(std::string unRepertoire) const
+void Application::coller(std::string unRepertoire)
 {
 
 	if (sonCopier != "")
 	{
 		std::string laCommande = "cp -Rf \"" + sonCopier + "\" \"" + sonRepertoireCourant + unRepertoire + "\";";
-		system(laCommande.c_str());
+
+		if (system(laCommande.c_str()) == -1)
+		{
+			ajouterErreur("Permission denied.");
+		}
+
 	}
 
 	return;
@@ -155,6 +161,11 @@ std::string Application::getSonApplication(std::string uneExtension) const
 std::vector<std::vector<Element *> > Application::getSonContenu() const
 {
 	return sonContenu;
+}
+
+std::string Application::getSonRepertoireCourant() const
+{
+	return sonRepertoireCourant;
 }
 
 void Application::lireRepertoire()
@@ -234,10 +245,15 @@ void Application::resetSesErreurs()
 	return;
 }
 
-void Application::supprimer(std::string unFichier) const
+void Application::supprimer(std::string unFichier)
 {
 	std::string laCommande = "rm -Rf \"" + sonRepertoireCourant + unFichier + "\";";
-	system(laCommande.c_str());
+
+	if (system(laCommande.c_str()) == -1)
+	{
+		ajouterErreur("Permission denied.");
+	}
+
 	return;
 }
 

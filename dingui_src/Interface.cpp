@@ -13,6 +13,7 @@ Interface::Interface()
 ,sonArrierePlan(NULL)
 ,sonFondMessage(NULL)
 ,sonFondMenu(NULL)
+,sonMenuSelectionne(NULL)
 ,sonIconeDossier(NULL)
 ,sonIconeFichier(NULL)
 ,sonIconeInconnu(NULL)
@@ -36,6 +37,34 @@ Interface::Interface()
 	SDL_EnableKeyRepeat(500, 100);
 	SDL_ShowCursor(SDL_DISABLE);
 	atexit(SDL_Quit);
+	SDL_Surface * lEcranNoir = SDL_CreateRGBSurface(SDL_SWSURFACE, 320, 240, 16, 0, 0, 0, 0);
+	SDL_Surface * leBootScreen = chargerImage(sonExplorateur.getSaValeur("boot-image"));
+
+	for (int i = SDL_ALPHA_OPAQUE; i != SDL_ALPHA_TRANSPARENT; i = i - 15)
+	{
+		SDL_SetAlpha(lEcranNoir, SDL_SRCALPHA, i);
+
+		if (SDL_BlitSurface(leBootScreen, NULL, sonEcran, NULL) == -1)
+		{
+			std::cerr << "SDL_BlitSurface(): " << SDL_GetError() << std::endl;
+			exit(EXIT_FAILURE);
+		}
+
+		if (SDL_BlitSurface(lEcranNoir, NULL, sonEcran, NULL) == -1)
+		{
+			std::cerr << "SDL_BlitSurface(): " << SDL_GetError() << std::endl;
+			exit(EXIT_FAILURE);
+		}
+
+		if (SDL_Flip(sonEcran) == -1)
+		{
+			std::cerr << "SDL_Flip(): " << SDL_GetError() << std::endl;
+			exit(EXIT_FAILURE);
+		}
+
+	}
+
+	SDL_FreeSurface(lEcranNoir);
 
 	if (TTF_Init() == -1)
 	{
@@ -70,7 +99,7 @@ Interface::Interface()
 
 		if (lExtension == "" || lIcone == "" || sesIcones.insert(std::make_pair(lExtension, chargerImage(lIcone))).second == false)
 		{
-			sonExplorateur.ajouterErreur("The icons.txt file is corrupted");
+			sonExplorateur.ajouterErreur("The icons.txt file is corrupted.");
 		}
 
 	}
@@ -78,12 +107,38 @@ Interface::Interface()
 	lesIcones.close();
 	sonArrierePlan = chargerImage(sonExplorateur.getSaValeur("background-image"));
 	sonFondMessage = chargerImage(sonExplorateur.getSaValeur("foreground-image"));
-	sonFondMenu = chargerImage(sonExplorateur.getSaValeur("menu-image"));
+	sonFondMenu = chargerImage(sonExplorateur.getSaValeur("menu-background"));
+	sonMenuSelectionne = chargerImage(sonExplorateur.getSaValeur("menu-focus"));
 	sonIconeDossier = chargerImage(sonExplorateur.getSaValeur("folder-icon"));
 	sonIconeFichier = chargerImage(sonExplorateur.getSaValeur("file-icon"));
 	sonIconeInconnu = chargerImage(sonExplorateur.getSaValeur("unknown-icon"));
 	sonExplorateur.lireRepertoire();
-	afficher();
+
+	for (int i = SDL_ALPHA_OPAQUE; i != SDL_ALPHA_TRANSPARENT; i = i - 15)
+	{
+		SDL_SetAlpha(leBootScreen, SDL_SRCALPHA, i);
+
+		if (SDL_BlitSurface(sonArrierePlan, NULL, sonEcran, NULL) == -1)
+		{
+			std::cerr << "SDL_BlitSurface(): " << SDL_GetError() << std::endl;
+			exit(EXIT_FAILURE);
+		}
+
+		if (SDL_BlitSurface(leBootScreen, NULL, sonEcran, NULL) == -1)
+		{
+			std::cerr << "SDL_BlitSurface(): " << SDL_GetError() << std::endl;
+			exit(EXIT_FAILURE);
+		}
+
+		if (SDL_Flip(sonEcran) == -1)
+		{
+			std::cerr << "SDL_Flip(): " << SDL_GetError() << std::endl;
+			exit(EXIT_FAILURE);
+		}
+
+	}
+
+	SDL_FreeSurface(leBootScreen);
 	boucler();
 }
 
@@ -94,6 +149,7 @@ Interface::~Interface()
 	SDL_FreeSurface(sonArrierePlan);
 	SDL_FreeSurface(sonFondMessage);
 	SDL_FreeSurface(sonFondMenu);
+	SDL_FreeSurface(sonMenuSelectionne);
 	SDL_FreeSurface(sonIconeDossier);
 	SDL_FreeSurface(sonIconeFichier);
 	SDL_FreeSurface(sonIconeInconnu);
@@ -110,6 +166,7 @@ void Interface::boucler()
 
 	while (b)
 	{
+		afficher();
 
 		if (SDL_WaitEvent(&lEvenement))
 		{
@@ -138,11 +195,11 @@ void Interface::boucler()
 							case SDLK_UP :
 								switch (sonMenu)
 								{
-									case 9 :
-										sonMenu = 5;
+									case 10 :
+										sonMenu = 6;
 										break;
 									case 1 :
-										sonMenu = 10;
+										sonMenu = 11;
 										break;
 									default :
 										sonMenu--;
@@ -151,10 +208,10 @@ void Interface::boucler()
 							case SDLK_DOWN :
 								switch (sonMenu)
 								{
-									case 5 :
-										sonMenu = 9;
+									case 6 :
+										sonMenu = 10;
 										break;
-									case 10 :
+									case 11 :
 										sonMenu = 1;
 										break;
 									default :
@@ -176,7 +233,7 @@ void Interface::boucler()
 												leContenu = sonExplorateur.getSonContenu();
 												break;
 											case fichier :
-												sonExplorateur.ouvrirFichier(leContenu[sonY][sonX]);
+												sonExplorateur.ouvrirFichier(leContenu[sonY][sonX], false);
 												break;
 											default :
 												sonExplorateur.ajouterErreur("Could not open the file.");
@@ -184,16 +241,23 @@ void Interface::boucler()
 										sonMenu = 0;
 										break;
 									case 2 :
+										if (leContenu[sonY][sonX]->getSonType() == fichier)
+										{
+											sonExplorateur.ouvrirFichier(leContenu[sonY][sonX], true);
+											sonMenu = 0;
+										}
+										break;
+									case 3 :
 										sonExplorateur.copier(leContenu[sonY][sonX]->getSonNom());
 										sonMenu = 0;
 										break;
-									case 3 :
+									case 4 :
 										sonExplorateur.coller("");
 										sonMenu = 0;
 										sonExplorateur.lireRepertoire();
 										leContenu = sonExplorateur.getSonContenu();
 										break;
-									case 4 :
+									case 5 :
 										if (leContenu[sonY][sonX]->getSonType() == dossier)
 										{
 											sonExplorateur.coller(leContenu[sonY][sonX]->getSonNom());
@@ -202,7 +266,7 @@ void Interface::boucler()
 											leContenu = sonExplorateur.getSonContenu();
 										}
 										break;
-									case 5 :
+									case 6 :
 										sonExplorateur.supprimer(leContenu[sonY][sonX]->getSonNom());
 										sonMenu = 0;
 										sonScroll = 0;
@@ -211,11 +275,11 @@ void Interface::boucler()
 										sonExplorateur.lireRepertoire();
 										leContenu = sonExplorateur.getSonContenu();
 										break;
-									case 9 :
+									case 10 :
 										sonExplorateur.eteindre();
 										sonMenu = 0;
 										break;
-									case 10 :
+									case 11 :
 										sonExplorateur.redemarrer();
 										sonMenu = 0;
 										break;
@@ -282,7 +346,7 @@ void Interface::boucler()
 										leContenu = sonExplorateur.getSonContenu();
 										break;
 									case fichier :
-										sonExplorateur.ouvrirFichier(leContenu[sonY][sonX]);
+										sonExplorateur.ouvrirFichier(leContenu[sonY][sonX], false);
 										break;
 									default :
 										sonExplorateur.ajouterErreur("Could not open the file.");
@@ -308,7 +372,6 @@ void Interface::boucler()
 
 				}
 
-				afficher();
 			}
 
 		}
@@ -327,6 +390,31 @@ void Interface::afficher()
 		exit(EXIT_FAILURE);
 	}
 
+	ecrire(sonExplorateur.getSonRepertoireCourant(), 0, 0, false);
+	std::ifstream laBatterie("/proc/jz/battery");
+	std::string leNiveau;
+	getline(laBatterie, leNiveau);
+	laBatterie.close();
+	int leNiveau2 = atoi(leNiveau.c_str());
+	int font_size = atoi(sonExplorateur.getSaValeur("font-size").c_str());
+	ecrire("[", 320 - font_size / 2 * 5, 0, false);
+
+	if (leNiveau2 >= 3739)
+	{
+		ecrire("|", 320 - font_size * 2, 0, false);
+	}
+
+	if (leNiveau2 >= 3675)
+	{
+		ecrire("|", 320 - font_size / 2 * 3, 0, false);
+	}
+
+	if (leNiveau2 >= 3611)
+	{
+		ecrire("|", 320 - font_size, 0, false);
+	}
+
+	ecrire("]", 320 - font_size / 2, 0, false);
 	int leX = 0;
 	int leY = 0;
 	SDL_Rect laPosition;
@@ -335,7 +423,6 @@ void Interface::afficher()
 	int nb_icons_y = atoi(sonExplorateur.getSaValeur("nb-icons-y").c_str());
 	int icon_width = atoi(sonExplorateur.getSaValeur("icon-width").c_str());
 	int icon_height = atoi(sonExplorateur.getSaValeur("icon-height").c_str());
-	int font_size = atoi(sonExplorateur.getSaValeur("font-size").c_str());
 	unsigned int name_max_size = ((320 / nb_icons_x) / (font_size / 2 )) - 1;
 	std::vector<std::vector<Element *> > leContenu = sonExplorateur.getSonContenu();
 	std::vector<std::vector<Element *> >::const_iterator leItY;
@@ -410,14 +497,28 @@ void Interface::afficher()
 			exit(EXIT_FAILURE);
 		}
 
-		ecrire("->", 200, (2 + sonMenu) * font_size, false);
-		ecrire("Open", 212, 3 * font_size, false);
-		ecrire("Copy", 212, 4 * font_size, false);
-		ecrire("Paste", 212, 5 * font_size, false);
-		ecrire("Paste Into Folder", 212, 6 * font_size, false);
-		ecrire("Delete", 212, 7 * font_size, false);
-		ecrire("Shut Down", 212, 11 * font_size, false);
-		ecrire("Restart", 212, 12 * font_size, false);
+		laPosition.x = 188;
+		laPosition.y = (2 + sonMenu) * font_size + 1;
+		SDL_Rect lesDimensions;
+		lesDimensions.x = 0;
+		lesDimensions.y = (2 + sonMenu) * font_size + 1;
+		lesDimensions.w = 132;
+		lesDimensions.h = font_size;
+
+		if (SDL_BlitSurface(sonMenuSelectionne, &lesDimensions, sonEcran, &laPosition) == -1)
+		{
+			std::cerr << "SDL_BlitSurface(): " << SDL_GetError() << std::endl;
+			exit(EXIT_FAILURE);
+		}
+
+		ecrire("Open", 200, 3 * font_size, false);
+		ecrire("Force execution", 200, 4 * font_size, false);
+		ecrire("Copy", 200, 5 * font_size, false);
+		ecrire("Paste", 200, 6 * font_size, false);
+		ecrire("Paste Into Folder", 200, 7 * font_size, false);
+		ecrire("Delete", 200, 8 * font_size, false);
+		ecrire("Shut Down", 200, 12 * font_size, false);
+		ecrire("Restart", 200, 13 * font_size, false);
 	}
 
 	if (sonExplorateur.getSesErreurs() != "")
@@ -490,11 +591,11 @@ void Interface::ecrire(std::string unTexte, int unX, int unY, bool estSelectionn
 	{
 		laPosition.x = unX;
 		laPosition.y = unY;
-		leTexte = TTF_RenderText_Shaded(saPolice, unTexte.c_str(), sonBlanc, sonFocus);
+		leTexte = TTF_RenderUTF8_Shaded(saPolice, unTexte.c_str(), sonBlanc, sonFocus);
 
 		if (leTexte == NULL)
 		{
-			std::cerr << "TTF_RenderText_Shaded(): " << TTF_GetError() << std::endl;
+			std::cerr << "TTF_RenderUTF8_Shaded(): " << TTF_GetError() << std::endl;
 			exit(EXIT_FAILURE);
 		}
 
@@ -510,11 +611,11 @@ void Interface::ecrire(std::string unTexte, int unX, int unY, bool estSelectionn
 	{
 		laPosition.x = unX + 1;
 		laPosition.y = unY + 1;
-		leTexte = TTF_RenderText_Blended(saPolice, unTexte.c_str(), sonNoir);
+		leTexte = TTF_RenderUTF8_Blended(saPolice, unTexte.c_str(), sonNoir);
 
 		if (leTexte == NULL)
 		{
-			std::cerr << "TTF_RenderText_Blended(): " << TTF_GetError() << std::endl;
+			std::cerr << "TTF_RenderUTF8_Blended(): " << TTF_GetError() << std::endl;
 			exit(EXIT_FAILURE);
 		}
 
@@ -526,11 +627,11 @@ void Interface::ecrire(std::string unTexte, int unX, int unY, bool estSelectionn
 
 		laPosition.x = unX;
 		laPosition.y = unY;
-		leTexte = TTF_RenderText_Blended(saPolice, unTexte.c_str(), sonBlanc);
+		leTexte = TTF_RenderUTF8_Blended(saPolice, unTexte.c_str(), sonBlanc);
 
 		if (leTexte == NULL)
 		{
-			std::cerr << "TTF_RenderText_Blended(): " << TTF_GetError() << std::endl;
+			std::cerr << "TTF_RenderUTF8_Blended(): " << TTF_GetError() << std::endl;
 			exit(EXIT_FAILURE);
 		}
 
@@ -554,7 +655,7 @@ void Application::eteindre() const
 	return;
 }
 
-void Application::ouvrirFichier(Element * unFichier)
+void Application::ouvrirFichier(Element * unFichier, bool estExecutable)
 {
 	char exe[512];
 	int exe_len = readlink("/proc/self/exe", exe, sizeof(exe) - 1);
@@ -563,7 +664,7 @@ void Application::ouvrirFichier(Element * unFichier)
 	std::string leNom = unFichier->getSonNom();
 	std::string lExtension = unFichier->getSonExtension();
 
-	if (lExtension == "dge" || lExtension == "sh")
+	if (lExtension == "dge" || lExtension == "goo" || lExtension == "sh" || estExecutable == true)
 	{
 		std::string laCommande = "\"./" + unFichier->getSonNom() + "\"; cd \"" + cwd + "\"; exec \"" + exe + "\";";
 

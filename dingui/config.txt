@@ -1,16 +1,19 @@
+default-directory=/boot/
 nb-icons-x=4
 nb-icons-y=3
 icon-width=48
 icon-height=48
 font-size=12
 font-family=Arial.ttf
-focus-r=143
-focus-g=95
-focus-b=74
+focus-r=134
+focus-g=171
+focus-b=217
 background-image=images/background.png
 foreground-image=images/foreground.png
-menu-image=images/menu.png
-folder-icon=images/folder.png
-file-icon=images/text-x-generic.png
-unknown-icon=images/text-x-preview.png
+boot-image=images/boot.png
+menu-background=images/menu-background.png
+menu-focus=images/menu-focus.png
+folder-icon=icons/folder.png
+file-icon=icons/file.png
+unknown-icon=icons/file_broken.png
 

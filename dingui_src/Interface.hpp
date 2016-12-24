@@ -8,7 +8,7 @@ class Interface
 	int sonX, sonY, sonScroll, sonMenu;
 	std::map<std::string, SDL_Surface *> sesIcones;
 	SDL_Color sonBlanc, sonNoir, sonFocus;
-	SDL_Surface * sonEcran, * sonArrierePlan, * sonFondMessage, * sonFondMenu, * sonIconeDossier, * sonIconeFichier, * sonIconeInconnu;
+	SDL_Surface * sonEcran, * sonArrierePlan, * sonFondMessage, * sonFondMenu, * sonMenuSelectionne, * sonIconeDossier, * sonIconeFichier, * sonIconeInconnu;
 	TTF_Font * saPolice;
 	void afficher();
 	void boucler();

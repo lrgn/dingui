@@ -1,13 +1,6 @@
-dge	images/application-x-executable.png
-sh	images/text-x-script.png
-png	images/image-png.png
-ttf	images/font-x-generic.png
-cpp	images/text-x-c++.png
-hpp	images/text-x-c++.png
-nes	images/nes.png
-smc	images/smc.png
-078	images/smc.png
-gb	images/gb.png
-gbc	images/gb.png
-gba	images/gb.png
+dge	icons/exec.png
+goo	icons/make.png
+sh	icons/make.png
+gb	icons/gb.png
+gbc	icons/gb.png
 
