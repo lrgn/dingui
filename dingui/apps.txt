@@ -1,0 +1,4 @@
+smc	/usr/local/snes9x
+gb	/usr/local/sdlgnuboy
+gbc	/usr/local/sdlgnuboy
+
